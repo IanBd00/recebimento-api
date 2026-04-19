@@ -14,23 +14,35 @@ def iniciar_recebimento(db: Session = Depends(get_db)):
     return {"id": recebimento.id, "data": recebimento.data, "itens": []}
 
 @router.post("/{id}/item")
-def adicionar_item(id: int, dun14: str, quantidade: int, db: Session = Depends(get_db)):
+def adicionar_item(id: int, dun14: str, db: Session = Depends(get_db)):
     recebimento = db.query(Recebimento).filter(Recebimento.id == id).first()
     if not recebimento:
         raise HTTPException(status_code=404, detail="Recebimento não encontrado")
     produto = db.query(Produto).filter(Produto.dun14 == dun14).first()
     if not produto:
         raise HTTPException(status_code=404, detail="Produto não encontrado")
-    item = ItemRecebimento(
-        recebimento_id=id,
-        dun14=dun14,
-        nome_produto=produto.nome,
-        quantidade=quantidade
-    )
-    db.add(item)
-    db.commit()
-    return {"mensagem": "Item adicionado", "produto": produto.nome, "quantidade": quantidade}
-
+    
+    # Verifica se já existe item com esse DUN-14 nesse recebimento
+    item_existente = db.query(ItemRecebimento).filter(
+        ItemRecebimento.recebimento_id == id,
+        ItemRecebimento.dun14 == dun14
+    ).first()
+    
+    if item_existente:
+        item_existente.quantidade += 1
+        db.commit()
+        return {"mensagem": "Quantidade atualizada", "produto": produto.nome, "quantidade": item_existente.quantidade}
+    else:
+        item = ItemRecebimento(
+            recebimento_id=id,
+            dun14=dun14,
+            nome_produto=produto.nome,
+            quantidade=1
+        )
+        db.add(item)
+        db.commit()
+        return {"mensagem": "Item adicionado", "produto": produto.nome, "quantidade": 1}
+    
 @router.get("/{id}/relatorio")
 def relatorio(id: int, db: Session = Depends(get_db)):
     recebimento = db.query(Recebimento).filter(Recebimento.id == id).first()
