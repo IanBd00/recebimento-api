@@ -15,6 +15,7 @@ class Recebimento(Base):
     __tablename__ = "recebimentos"
 
     id = Column(Integer, primary_key=True, index=True)
+    nome = Column(String, nullable=True)
     data = Column(DateTime, default=datetime.now)
     itens = relationship("ItemRecebimento", back_populates="recebimento")
 
