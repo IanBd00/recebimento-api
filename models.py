@@ -15,9 +15,9 @@ class Recebimento(Base):
     __tablename__ = "recebimentos"
 
     id = Column(Integer, primary_key=True, index=True)
-    nome = Column(String, nullable=True)
     data = Column(DateTime, default=datetime.now)
     itens = relationship("ItemRecebimento", back_populates="recebimento")
+    historico = relationship("Historico", back_populates="recebimento", uselist=False)
 
 class ItemRecebimento(Base):
     __tablename__ = "itens_recebimento"
@@ -28,3 +28,12 @@ class ItemRecebimento(Base):
     nome_produto = Column(String, nullable=False)
     quantidade = Column(Integer, nullable=False)
     recebimento = relationship("Recebimento", back_populates="itens")
+
+class Historico(Base):
+    __tablename__ = "historico"
+
+    id = Column(Integer, primary_key=True, index=True)
+    recebimento_id = Column(Integer, ForeignKey("recebimentos.id"), nullable=False, unique=True)
+    nome = Column(String, nullable=False)
+    data = Column(DateTime, default=datetime.now)
+    recebimento = relationship("Recebimento", back_populates="historico")
