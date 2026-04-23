@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from database import get_db
-from models import Historico, Recebimento
+from models import Historico, Recebimento, ItemRecebimento
 from datetime import datetime
 
 router = APIRouter(prefix="/historico", tags=["Histórico"])
@@ -65,3 +65,18 @@ def detalhe_historico(id: int, db: Session = Depends(get_db)):
             for i in h.recebimento.itens
         ],
     }
+
+@router.delete("/{id}")
+def deletar_historico(id: int, db: Session = Depends(get_db)):
+    h = db.query(Historico).filter(Historico.id == id).first()
+    if not h:
+        raise HTTPException(status_code=404, detail="Histórico não encontrado")
+    db.delete(h)
+    db.commit()
+    return {"mensagem": "Histórico deletado"}
+
+@router.delete("/")
+def deletar_todos(db: Session = Depends(get_db)):
+    db.query(Historico).delete()
+    db.commit()
+    return {"mensagem": "Todos os históricos deletados"}
