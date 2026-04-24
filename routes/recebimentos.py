@@ -94,3 +94,18 @@ def relatorio(id: int, db: Session = Depends(get_db)):
             for i in recebimento.itens
         ]
     }
+
+@router.delete("/{id}/item")
+def remover_item(id: int, dun14: str, db: Session = Depends(get_db)):
+    item = db.query(ItemRecebimento).filter(
+        ItemRecebimento.recebimento_id == id,
+        ItemRecebimento.dun14 == dun14
+    ).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item não encontrado")
+    if item.quantidade > 1:
+        item.quantidade -= 1
+    else:
+        db.delete(item)
+    db.commit()
+    return {"mensagem": "Item atualizado"}
