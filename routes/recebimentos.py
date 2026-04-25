@@ -25,15 +25,16 @@ def adicionar_item(id: int, dun14: str, db: Session = Depends(get_db)):
     if not produto:
         raise HTTPException(status_code=404, detail="Produto não encontrado")
 
+    # Operação atômica — incrementa direto no banco sem ler antes
     item_existente = db.query(ItemRecebimento).filter(
         ItemRecebimento.recebimento_id == id,
         ItemRecebimento.dun14 == dun14
-    ).first()
+    ).with_for_update().first()  # trava a linha durante a operação
 
     if item_existente:
         item_existente.quantidade += 1
         db.commit()
-        return {"mensagem": "Quantidade atualizada", "produto": produto.nome, "quantidade": item_existente.quantidade}
+        return {"mensagem": "Item atualizado", "produto": produto.nome, "quantidade": item_existente.quantidade}
     else:
         item = ItemRecebimento(
             recebimento_id=id,
@@ -44,7 +45,7 @@ def adicionar_item(id: int, dun14: str, db: Session = Depends(get_db)):
         db.add(item)
         db.commit()
         return {"mensagem": "Item adicionado", "produto": produto.nome, "quantidade": 1}
-
+    
 @router.patch("/{id}/finalizar")
 def finalizar_recebimento(id: int, nome: str, db: Session = Depends(get_db)):
     recebimento = db.query(Recebimento).filter(Recebimento.id == id).first()
